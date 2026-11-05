@@ -19,5 +19,6 @@
 #include "tcp/tcp_server.h"
 #include "hci.h"
 #include "udp_bridge.h"
+#include "bridgeWrapper.h"
 
 #endif //ARDUINO_ROUTER_BRIDGE_H
