@@ -264,13 +264,20 @@ public:
         return out;
     }
 
-    // Fails without touching the local callback if the Router does not support $/unregister
+    // Succeeds if name is not bound locally (never provided or already unprovided): no callback
+    // can run anymore. The Router is asked anyway, since it may still hold the name (see provide).
+    // Otherwise it fails without touching the local callback if the Router does not support $/unregister
     bool unprovide(const MsgPack::str_t& name) {
         k_mutex_lock(&dispatch_mutex, K_FOREVER);
         k_mutex_lock(&bridge_mutex, K_FOREVER);
+        k_mutex_lock(&read_mutex, K_FOREVER);
+        bool bound = server->isBound(name);
+        k_mutex_unlock(&read_mutex);
         bool res;
         bool out = call(UNBIND_METHOD, name).result(res) && res;
-        if (out) {
+        if (!bound) {
+            out = true;
+        } else if (out) {
             // dispatch_mutex is recursive: dispatching is set only if we are inside a callback
             if (dispatching != nullptr && *dispatching == name) {
                 // The callback is unproviding itself: unbind it after it returns
